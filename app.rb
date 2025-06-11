@@ -37,7 +37,10 @@ class CoinPriceFetcher
 			prices.each do |id, data|
 				if data && data.key?(vs_currencies)
 					formatted_data = format_price(data[vs_currencies])
-					puts "Цена #{id.capitalize}: #{formatted_data} #{vs_currencies.upcase}".colorize(:green)
+					coin_name = id.capitalize.colorize(:light_blue) # Цвет названия
+					coin_price = formatted_data.colorize(:green) # Цвет цены
+					vs_currency = vs_currencies.upcase.colorize(:yellow) # Цвет валюты
+					puts "%32s : %22s %s" % [coin_name, coin_price, vs_currency]
 				else
 					puts "Ошибка при получении цены #{id}".colorize(:red)
 				end
@@ -51,15 +54,22 @@ class CoinPriceFetcher
 
 	# Форматирует цену для красивого отображения
 	def format_price(price)
-		case price
-		when 0...0.00001
-			sprintf('%.8f', price)
-		when 0...1
-			sprintf('%.5f', price)
-		when 1...10
-			sprintf('%.3f', price)
+		formatted = case price
+					when 0...0.00001
+						sprintf('%.8f', price).sub(/\.?0+$/, '') # например: 0.00000012
+					when 0...1
+						sprintf('%.5f', price).sub(/\.?0+$/, '')
+					when 1...10
+						sprintf('%.3f', price).sub(/\.?0+$/, '')
+					else
+						price.to_s
+					end
+
+		# Если после точки только нули, и число > 1, то обрезаем точку тоже
+		if formatted.include?('.') && formatted.split('.')[1]&.gsub(/[^\d]/, '')&.to_i == 0
+			formatted.split('.')[0] # Убираем .000
 		else
-			price.to_s
+			formatted
 		end
 	end
 end
