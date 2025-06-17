@@ -20,10 +20,12 @@ group :development, :test do
   gem 'rspec', '~> 3.12'      # Testing framework
   gem 'pry', '~> 0.14'        # Debugging console
   gem 'rubocop', '~> 1.50'    # Code linting
+  gem "rufo", "~> 0.18.1"     # Code formatting
   gem 'simplecov', '~> 0.22'  # Code coverage
 end
 
 group :development do
   gem 'guard', '~> 2.18'      # File watching for auto-testing
   gem 'guard-rspec', '~> 4.7' # Guard plugin for RSpec
+  gem "guard-shell", "~> 0.7.2" # Shell command execution
 end

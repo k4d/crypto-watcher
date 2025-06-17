@@ -1,112 +1,110 @@
 # app.rb
-require 'httparty'
-require 'json'
-require 'colorize'
-require 'rufus-scheduler'
+require "httparty"
+require "json"
+require "colorize"
+require "rufus-scheduler"
 
 # Класс для получения текущих цен на криптовалюты и объемов торговли с использованием API CoinGecko
 class CoinPriceFetcher
-	include HTTParty
-	base_uri 'https://api.coingecko.com/api/v3'
+  include HTTParty
+  base_uri "https://api.coingecko.com/api/v3"
 
-	DEFAULT_CURRENCY = 'usd'.freeze
+  DEFAULT_CURRENCY = "usd".freeze
 
-	# Инициализация класса
-	def initialize
-	end
+  # Инициализация класса
+  def initialize
+  end
 
-	# Получение списка криптовалют и получение текущей цены по id
-	def fetch_price(ids, vs_currencies = DEFAULT_CURRENCY)
-		ids = ids.join(",") if ids.is_a?(Array)
-		response = self.class.get("/simple/price", query: { ids: ids, vs_currencies: vs_currencies })
+  # Получение списка криптовалют и получение текущей цены по id
+  def fetch_price(ids, vs_currencies = DEFAULT_CURRENCY)
+    ids = ids.join(",") if ids.is_a?(Array)
+    response = self.class.get("/simple/price", query: { ids: ids, vs_currencies: vs_currencies })
 
-		if response.success?
-			data = JSON.parse(response.body)
-			data || nil
-		else
-			puts "Ошибка при получении цены: #{response.code}".colorize(:red)
-			nil
-		end
-	end
+    if response.success?
+      data = JSON.parse(response.body)
+      data || nil
+    else
+      puts "Ошибка при получении цены: #{response.code}".colorize(:red)
+      nil
+    end
+  end
 
-	# Выводит текущую цену криптовалюты в консоль
-	def get_price(ids, vs_currencies = DEFAULT_CURRENCY)
-		prices = fetch_price(ids, vs_currencies)
+  # Выводит текущую цену криптовалюты в консоль
+  def get_price(ids, vs_currencies = DEFAULT_CURRENCY)
+    prices = fetch_price(ids, vs_currencies)
 
-		if prices
-			prices.each do |id, data|
-				if data && data.key?(vs_currencies)
-					formatted_data = format_price(data[vs_currencies])
-					coin_name = id.capitalize.colorize(:light_blue) # Цвет названия
-					coin_price = formatted_data.colorize(:green) # Цвет цены
-					vs_currency = vs_currencies.upcase.colorize(:yellow) # Цвет валюты
-					puts "%32s : %22s %s" % [coin_name, coin_price, vs_currency]
-				else
-					puts "Ошибка при получении цены #{id}".colorize(:red)
-				end
-			end
-		else
-			puts "Ошибка API при запросе цены для #{ids}".colorize(:red)
-		end
-	end
+    if prices
+      prices.each do |id, data|
+        if data && data.key?(vs_currencies)
+          formatted_data = format_price(data[vs_currencies])
+          coin_name = id.capitalize.colorize(:light_blue) # Цвет названия
+          coin_price = formatted_data.colorize(:green) # Цвет цены
+          vs_currency = vs_currencies.upcase.colorize(:yellow) # Цвет валюты
+          puts "%32s : %22s %s" % [coin_name, coin_price, vs_currency]
+        else
+          puts "Ошибка при получении цены #{id}".colorize(:red)
+        end
+      end
+    else
+      puts "Ошибка API при запросе цены для #{ids}".colorize(:red)
+    end
+  end
 
-	private
+  private
 
-	# Форматирует цену для красивого отображения
-	def format_price(price)
-		return '' if price.nil?
+  # Форматирует цену для красивого отображения
+  def format_price(price)
+    return "" if price.nil?
 
-		# Определяем точность
-		formatted =
-			case price
-			when 0...0.00001
-				'%.8f' % price
-			when 0...1
-				'%.5f' % price
-			when 1...10
-				'%.3f' % price
-			else
-				price.to_s
-			end
+    # Определяем точность
+    formatted = case price
+      when 0...0.00001
+        "%.8f" % price
+      when 0...1
+        "%.5f" % price
+      when 1...10
+        "%.3f" % price
+      else
+        price.to_s
+      end
 
-		# Убираем лишние нули и точку, если нужно
-		formatted.sub(/\.?0+$/, '')
-	end
-
+    # Убираем лишние нули и точку, если нужно
+    formatted.sub(/\.?0+$/, "")
+  end
 end
 
 # TaskStats
 module TaskStats
-	class << self
-		attr_accessor :counter
-	end
-	self.counter = 0
+  class << self
+    attr_accessor :counter
+  end
+  self.counter = 0
 end
 
 # Основная задача
 def run_task
-	TaskStats.counter += 1
-	current_time = Time.now.strftime("%Y-%m-%d %H:%M:%S")
-	puts "Задача запущена #{TaskStats.counter} раз(а) в #{current_time}.".colorize(:gray)
+  TaskStats.counter += 1
+  current_time = Time.now.strftime("%Y-%m-%d %H:%M:%S")
+  puts "Задача запущена #{TaskStats.counter} раз(а) в #{current_time}.".colorize(:gray)
 
-	# Создаем экземпляр класса CoinPriceFetcher
-	coins_price = CoinPriceFetcher.new
-	# Получаем текущую цену Coins list
-	coins_list = ['bitcoin', 'ethereum', 'the-open-network', 'zilliqa']
-	coins_price.get_price(coins_list)
+  # Создаем экземпляр класса CoinPriceFetcher
+  coins_price = CoinPriceFetcher.new
+  # Получаем текущую цену Coins list
+  coins_list = ["bitcoin", "ethereum", "the-open-network", "zilliqa"]
+  coins_price.get_price(coins_list)
 end
 
 if $PROGRAM_NAME == __FILE__
-	scheduler = Rufus::Scheduler.new
+  scheduler = Rufus::Scheduler.new
 
-	# Первый запуск задачи
-	run_task
+  # Первый запуск задачи
+  run_task
 
-	# Запуск задачи каждые 30 секунд
-	scheduler.every('30s') do
-		run_task
-	end
+  # Запуск задачи каждые 30 секунд
+  scheduler.every("30s") do
+    run_task
+  end
 
-	# Запуск планировщика
-	scheduler.join
+  # Запуск планировщика
+  scheduler.join
 end
