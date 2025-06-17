@@ -54,24 +54,25 @@ class CoinPriceFetcher
 
 	# Форматирует цену для красивого отображения
 	def format_price(price)
-		formatted = case price
-					when 0...0.00001
-						sprintf('%.8f', price).sub(/\.?0+$/, '') # например: 0.00000012
-					when 0...1
-						sprintf('%.5f', price).sub(/\.?0+$/, '')
-					when 1...10
-						sprintf('%.3f', price).sub(/\.?0+$/, '')
-					else
-						price.to_s
-					end
+		return '' if price.nil?
 
-		# Если после точки только нули, и число > 1, то обрезаем точку тоже
-		if formatted.include?('.') && formatted.split('.')[1]&.gsub(/[^\d]/, '')&.to_i == 0
-			formatted.split('.')[0] # Убираем .000
-		else
-			formatted
-		end
+		# Определяем точность
+		formatted =
+			case price
+			when 0...0.00001
+				'%.8f' % price
+			when 0...1
+				'%.5f' % price
+			when 1...10
+				'%.3f' % price
+			else
+				price.to_s
+			end
+
+		# Убираем лишние нули и точку, если нужно
+		formatted.sub(/\.?0+$/, '')
 	end
+
 end
 
 # TaskStats
